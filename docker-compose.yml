@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16
+    container_name: afl2_db
+    environment:
+      POSTGRES_DB: afl2db
+      POSTGRES_USER: afl2user
+      POSTGRES_PASSWORD: afl2pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - afl2_network
+
+  web1:
+    build: ./web
+    container_name: afl2_web1
+    environment:
+      DB_HOST: db
+      DB_NAME: afl2db
+      DB_USER: afl2user
+      DB_PASS: afl2pass
+      SECRET_KEY: supersecretkey
+    depends_on:
+      - db
+    networks:
+      - afl2_network
+
+  web2:
+    build: ./web
+    container_name: afl2_web2
+    environment:
+      DB_HOST: db
+      DB_NAME: afl2db
+      DB_USER: afl2user
+      DB_PASS: afl2pass
+      SECRET_KEY: supersecretkey
+    depends_on:
+      - db
+    networks:
+      - afl2_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: afl2_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web1
+      - web2
+    networks:
+      - afl2_network
+
+volumes:
+  pgdata:
+
+networks:
+  afl2_network:
+    driver: bridge
